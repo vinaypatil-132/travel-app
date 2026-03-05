@@ -1,0 +1,40 @@
+# ──────────────────────────────────────────────
+# .dockerignore — exclude everything not needed
+# for the Docker build context
+# ──────────────────────────────────────────────
+
+# Version control
+.git
+.gitignore
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Node modules — installed fresh inside builder
+node_modules
+
+# Next.js local caches and output
+.next
+out
+
+# Dev tooling & tests
+*.test.*
+*.spec.*
+coverage/
+scripts/
+__tests__/
+
+# IDE / OS artifacts
+.vscode
+.idea
+*.DS_Store
+*.swp
+
+# Prisma Studio local state
+.prisma
+
+# README and docs
+*.md
+LICENSE

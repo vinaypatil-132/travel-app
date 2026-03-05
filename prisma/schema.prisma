@@ -1,0 +1,273 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MediaVisibility {
+  PUBLIC
+  FRIENDS
+  SELECTED
+  PRIVATE
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  trips      Trip[]
+  savedTrips SavedTrip[]
+
+  // NextAuth adapter relations
+  accounts Account[]
+  sessions Session[]
+
+  // Media & Social relations
+  media       TripMedia[]
+  mediaAccess MediaAccess[]
+  friendsData UserFriend[]  @relation("UserFriendData")
+  friendLinks UserFriend[]  @relation("UserFriendLinks")
+
+  @@map("users")
+}
+
+// ─── NextAuth Adapter Tables ──────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Location ─────────────────────────────────────────────────────────────────
+
+model Location {
+  id            String   @id @default(cuid())
+  name          String
+  country       String
+  slug          String   @unique
+  coverImageUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  trips Trip[]
+
+  @@map("locations")
+}
+
+// ─── Trip ─────────────────────────────────────────────────────────────────────
+
+model Trip {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  description   String?   @db.Text
+  isPublic      Boolean   @default(false)
+  coverImageUrl String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // Soft delete
+
+  // Foreign keys
+  userId     String
+  locationId String
+
+  // Relations
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location Location    @relation(fields: [locationId], references: [id])
+  days     TripDay[]
+  saved    SavedTrip[]
+  media    TripMedia[]
+
+  @@index([locationId])
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("trips")
+}
+
+// ─── TripDay ──────────────────────────────────────────────────────────────────
+
+model TripDay {
+  id          String   @id @default(cuid())
+  dayNumber   Int
+  title       String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign key
+  tripId String
+
+  // Relations
+  trip       Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activities TripActivity[]
+
+  @@unique([tripId, dayNumber])
+  @@map("trip_days")
+}
+
+// ─── TripActivity ─────────────────────────────────────────────────────────────
+
+model TripActivity {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  orderIndex  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign key
+  tripDayId String
+
+  // Relations
+  day TripDay @relation(fields: [tripDayId], references: [id], onDelete: Cascade)
+
+  @@unique([tripDayId, orderIndex])
+  @@map("trip_activities")
+}
+
+// ─── SavedTrip (schema-only, Phase 2 for UI/API) ─────────────────────────────
+
+model SavedTrip {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Foreign keys
+  userId String
+  tripId String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tripId])
+  @@map("saved_trips")
+}
+
+// ─── TripMedia (Phase 2.5) ───────────────────────────────────────────────────
+
+model TripMedia {
+  id         String          @id @default(cuid())
+  tripId     String
+  userId     String
+  url        String
+  mediaType  MediaType
+  visibility MediaVisibility @default(PUBLIC)
+  caption    String?         @db.Text
+  orderIndex Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  trip       Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessList MediaAccess[]
+
+  @@index([tripId])
+  @@index([userId])
+  @@index([visibility])
+  @@index([tripId, visibility])
+  @@map("trip_media")
+}
+
+// ─── Friend System (Phase 2.8) ────────────────────────────────────────────────
+
+model UserFriend {
+  id        String       @id @default(cuid())
+  userId    String
+  friendId  String
+  status    FriendStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+
+  user   User @relation("UserFriendData", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("UserFriendLinks", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@map("user_friends")
+}
+
+// ─── Media Access (Phase 2.8) ─────────────────────────────────────────────────
+
+model MediaAccess {
+  id        String   @id @default(cuid())
+  mediaId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  media TripMedia @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaId, userId])
+  @@index([mediaId])
+  @@index([userId])
+  @@map("media_access")
+}

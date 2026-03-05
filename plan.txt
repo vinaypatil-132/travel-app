@@ -1,0 +1,83 @@
+Travel GO
+
+# features:
+
+-> Option C: Travel Timeline Journaling
+Instead of Instagram-style random posts:
+
+User creates:
+📍 Trip → Day-wise memory log
+Day 1: Beach
+Day 2: Club
+Day 3: Hidden cafe
+Other users can:
+Save full itineraries
+Copy trip plans
+Ask trip-specific questions
+This is powerful.
+
+-> 🔟 Now Important Strategic Question
+How will users create trips?
+
+Manual typing?
+Or guided template?
+If you don’t guide them, quality will be bad.
+I strongly recommend:
+Step-by-step creation wizard:
+Trip basics
+Add Day 1
+Add Day 2
+Add photos
+Publish
+Structured input = structured output.
+
+-> 
+keyID: 005c4c500ccbc8b0000000001
+keyName: travel-app-server
+applicationKey: K005W1FRzLFhv+mBtr6rbuUczZK0y00
+bucketName: travel-blueprint-prod
+Endpoint: s3.us-east-005.backblazeb2.com 
+
+
+
+
+
+We want to extend the Trip Media system with media visibility and friend sharing.
+
+Goal:
+Allow users to upload personal photos inside trips that are not visible publicly but can optionally be shared with selected friends.
+
+Implementation plan should include:
+
+1. Media visibility levels
+Each TripMedia record must support:
+PUBLIC
+FRIENDS
+PRIVATE
+
+Default should remain PUBLIC.
+
+2. Database updates
+Add MediaVisibility enum and visibility field to TripMedia.
+
+3. Friend system
+Introduce a UserFriend relation table supporting friend requests and accepted friendships.
+
+4. Media sharing
+When visibility = FRIENDS the system should allow access only to:
+- the owner
+- accepted friends
+- explicitly shared users.
+
+Implement a MediaAccess table linking mediaId and userId.
+
+5. Access control
+All gallery APIs must enforce media visibility rules server-side.
+
+6. UI updates
+Add a visibility selector for each media item inside the trip media manager.
+
+7. Friend management
+Create a /friends page allowing users to send and accept friend requests.
+
+Before implementation begins present the proposed schema and API endpoints for review.
