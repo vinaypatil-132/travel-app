@@ -4,7 +4,7 @@ metadata:
   name: travel-app-service
   namespace: travel-app
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: travel-app
   ports:
