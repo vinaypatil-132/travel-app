@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: travel-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: travel-app
+  template:
+    metadata:
+      labels:
+        app: travel-app
+    spec:
+      containers:
+      - name: travel-app
+        image: vinu890/travel-app:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
