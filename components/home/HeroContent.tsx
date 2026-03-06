@@ -60,7 +60,7 @@ export function HeroContent() {
         variants={itemVariants}
         className="mt-4 text-4xl font-bold leading-tight tracking-tight text-stone-900 sm:text-5xl lg:text-7xl"
       >
-        Plan Trips. Share Stories. Testing<br />
+        Plan Trips. Share Stories.<br />
         <span className="text-amber-600">Inspire Others.</span>
       </motion.h1>
       
